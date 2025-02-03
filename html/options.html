@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Extension Settings</title>
+  <link href="/css/list.css" rel="stylesheet">
+  <link href="/css/welcome.css" rel="stylesheet">
+  <link href="/css/options.css" rel="stylesheet">
+</head>
+<body>
+  <div class="sidebar">
+    <button id="back-btn" class="back-btn" title="Back">
+          <span class="material-icons">arrow_back</span>
+      </button>
+    <div class="nav-item" data-page="settings" id="settingsTab">Settings</div>
+    <div class="nav-item" data-page="help" id="aboutTab">About</div>
+  </div>
+  
+  <div class="content">
+    <div id="settings-page" class="page active">
+      <div id="settingsContainer">
+        <h2>Settings</h2>
+          <div class="settings-section">
+            <h3>Voice Settings</h3>
+            <div class="setting-item">
+              <label for="voiceSelect">Voice:</label>
+              <select id="voiceSelect"></select>
+          </div>
+          <div class="setting-item">
+              <label for="speedControl">Speech Rate:</label>
+              <input type="range" id="speedControl" min="0.5" max="2" step="0.1" value="1">
+              <span id="speedValue">1.0</span>
+          </div>
+          <div class="setting-item">
+              <label for="pitchControl">Pitch:</label>
+              <input type="range" id="pitchControl" min="0.5" max="2" step="0.1" value="1">
+              <span id="pitchValue">1.0</span>
+          </div>
+
+          <button id="saveSettings" class="save-btn">Save Settings</button>
+      </div>
+
+        <div class="settings-section">
+          <h3>Enable cursor tracking text highlighter</h3>
+          <div class="shortcut-checkbox">
+            <input type="checkbox" id="cursorTrackingToggle" checked>
+            <label for="cursorTrackingToggle"></label>
+          </div>
+          <h3>Keyboard Shortcuts</h3>
+          <div class="shortcuts-list">
+              <div class="shortcut-item">
+                  <span class="shortcut-name">Save selected text</span>
+                  <div class="shortcut-keys" id="saveShortcut">
+                      <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd>
+                  </div>
+              </div>
+              <div class="shortcut-item">
+                  <span class="shortcut-name">Open word dashboard</span>
+                  <div class="shortcut-keys" id="listShortcut">
+                      <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd>
+                  </div>
+              </div>
+          </div>
+          <div class="shortcut-info">
+              <span class="material-icons">info</span>
+              <p>To change shortcuts, visit <a href="#" id="openShortcuts">Chrome Extensions Shortcuts</a></p>
+          </div>
+
+        </div>
+
+        <div class="settings-section">
+            <h3>Data Management</h3>
+            <div class="data-management">
+                <div class="setting-item">
+                    <button id="exportData" class="action-btn">
+                        <span class="material-icons">file_download</span>
+                        Export Words
+                    </button>
+                    <p class="setting-description">Download your saved words as a JSON file</p>
+                </div>
+                <div class="setting-item">
+                    <label for="importFile" class="file-input-label">
+                        <span class="material-icons">file_upload</span>
+                        Import Words
+                    </label>
+                    <input type="file" id="importFile" accept=".json" style="display: none;">
+                    <p class="setting-description">Upload a previously exported words file</p>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="help-page" class="page">
+      <div class="container">
+        <h1>WordSave!</h1>
+
+        <div class="section">
+          <p>WordSave is a free pocket dictionary for people wanting to expand their vocabulary while also learning correct pronounciation.</p>
+
+          <p>It relies on a freely available API to work</p>
+
+          <div class="api-credit">
+            <h3>dictionaryapi.dev</h3>
+            <p>Used for word lookups - phonetic transcriptions and definitions.</p>
+            <a 
+            href="https://buymeacoffee.com/meetdeveloper" 
+            target="_blank">
+              <img 
+                src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" 
+                alt="Buy Me a Coffee" 
+                style="height: 60px; width: 217px;">
+            </a>
+          </div>
+      
+          <h2>How to Use</h2>
+          <p>WordSave relies on keyboard shortcuts to make saving and viewing words easier:</p>
+          <ol>
+              <li>Select a word and save using Control + Shift + S</li>
+              <li>View the WordSave dashboard with Control + Shift + L</li>
+          </ol>
+
+          <p>For full interactive functionality the cursor tracker has been automatically enabled. It can be disabled in the settings.</p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/tts-handler.js"></script>
+  <script src="/js/options.js"></script>
+  <script type="module" src="/js/settings.js"></script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Saved Words</title>
+    <link rel="stylesheet" href="/css/tailwind.css">
+    <link rel="stylesheet" href="/css/list.css">
+</head>
+<body>
+    <div class="content-container mx-auto max-w-md">
+        <div class="header-container">
+            <div>
+                <img src="/assets/images/wordsave_book_logo128.png" class="logo" height="48px" width="48px" alt="Logo"/>
+
+                <!--<h2 class="text-lg">Wordsave</h2>-->
+            </div>
+            <button id="openSettings" class="settings-btn" title="Settings">
+                <span class="material-icons">settings</span>
+            </button>
+        </div>
+
+        <dialog id="edit-popup">
+            <input type="text" id="edit-input">
+            <button id="save-btn">Save</button>
+            <button id="cancel-btn">Cancel</button>
+        </dialog>
+
+        <!--<input type="text" id="searchInput" placeholder="Search words...">-->
+        <div id="tableContainer" class="table-container"></div>
+    </div>
+    
+    <script src="/js/tts-handler.js"></script>
+    <script type="module" src="/js/list.js"></script>
+</body>
+</html>

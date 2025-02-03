@@ -1,0 +1,73 @@
+{
+    "name": "WordSave",
+    "description": "Expand your vocabulary - learn words as you go",
+    "version": "1.0",
+    "manifest_version": 3,
+    "permissions": 
+    ["storage",
+      "tabs",
+      "activeTab",
+      "scripting",
+      "notifications",
+      "commands",
+      "tts",
+      "contextMenus"],
+    "commands": {
+      "save-selected": {      
+        "suggested_key": {
+          "default": "Ctrl+Shift+S",
+          "mac": "Command+Shift+S"
+        },
+        "description": "Save selected text"
+      },
+      "show-list": {
+        "suggested_key": {
+          "default": "Ctrl+Shift+L",
+          "mac": "Command+Shift+L"
+        },
+        "description": "Show saved words"
+      },
+      "show-options": {
+        "suggested_key": {
+          "default": "Ctrl+Shift+G",
+          "mac": "Command+Shift+G"
+        },
+        "description": "Open settings page"
+      }
+    },
+    "content_scripts": [{
+      "matches": ["<all_urls>"],
+      "js": ["js/content.js"]
+    }],
+    "background": {
+      "service_worker": "js/background.js",
+      "type": "module"
+    },
+    "action": {
+      "default_icon": {
+        "16": "/assets/images/wordsave_book_logo16.png",
+        "32": "/assets/images/wordsave_book_logo32.png",
+        "48": "/assets/images/wordsave_book_logo48.png",
+        "128": "/assets/images/wordsave_book_logo128.png"
+      }
+    },
+    "options_page": "html/options.html",
+    "icons": {
+      "16": "/assets/images/wordsave_book_logo16.png",
+      "32": "/assets/images/wordsave_book_logo32.png",
+      "48": "/assets/images/wordsave_book_logo48.png",
+      "128": "/assets/images/wordsave_book_logo128.png"
+    },
+    "options_ui": {
+    "page": "html/options.html",
+    "open_in_tab": true
+  },
+    "host_permissions": [
+    "<all_urls>"
+  ],
+  "web_accessible_resources": [{
+    "resources": ["/assets/fonts/*"],
+    "matches": ["<all_urls>"]
+  }]
+  }
+  

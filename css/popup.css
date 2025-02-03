@@ -1,0 +1,12 @@
+body {
+	width: 300px;
+	padding: 10px;
+  }
+  .menu-item {
+	cursor: pointer;
+	padding: 8px;
+	margin: 5px 0;
+  }
+  .menu-item:hover {
+	background-color: #f0f0f0;
+  }
