@@ -231,7 +231,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             await deleteRecord(record.word);
                         }
                         catch {
-                            console.log('Failed to delete word')
+                            console.error('Failed to delete word')
                         }
                     }
                 });

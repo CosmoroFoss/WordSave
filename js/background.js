@@ -63,9 +63,6 @@ class DBManager {
   async addRecord(db, word, data, lang, apiurl) {
     if (!db) return;
 
-      let operationId = Date.now();
-      console.log(`1. [${operationId}] Starting promise execution`);
-
       const record = {
       timestamp: new Date().toISOString(),
       word : word,
@@ -74,59 +71,22 @@ class DBManager {
       APIurl: apiurl
       };
       
-      operationId = Date.now();
-      console.log(`2. [${operationId}] Created record:`, record);
-
       let isResolved = false;
       const transaction = db.transaction([this.STORE_NAME], 'readwrite');
       if (transaction.active) {
 
       }
-      operationId = Date.now();
-      console.log(`3. [${operationId}] Created transaction`);
-      operationId = Date.now();
-      console.log(`[${operationId}] Transaction state:`, {
-        active: transaction.active,
-        error: transaction.error,
-        mode: transaction.mode,
-        durability: transaction.durability
-      });
 
       transaction.oncomplete = (event) => {
-        operationId = Date.now();
-        console.log(`4a. [${operationId}] Transaction completed successfully`, event);
         if (!isResolved) {
           isResolved = true;
         }
       };
 
-      transaction.onerror = (event) => {
-        operationId = Date.now();
-        console.log(`4b. [${operationId}] Transaction failed`, event);
-      };
-
-      transaction.onabort = (event) => {
-        operationId = Date.now();
-        console.log(`4c. [${operationId}] Transaction aborted`, event);
-      };
-
       const store = transaction.objectStore(this.STORE_NAME);
-      operationId = Date.now();
-      console.log(`[${operationId}]`);
-      console.log(transaction.active)
       const request = store.add(record);
-      operationId = Date.now();
-      console.log(`5. [${operationId}] Added record to store`);
-
-      request.onsuccess = async () => {
-        operationId = Date.now();
-        console.log(`6a. [${operationId}] Request succeeded`, request.result);
-      };
       
       request.onerror = () => {
-        operationId = Date.now();
-        console.log(`6b. [${operationId}] Request failed`, request.error);
-
         if (!isResolved) {
           isResolved = true;
           reject(request.error);
@@ -208,7 +168,7 @@ async function init() {
 init();
 
 chrome.action.onClicked.addListener((tab) => {
-  console.log("Extension clicked in tab:", tab.url);
+  // Extension clicked in tab
   switchToTab('/html/list.html');
 });
 
@@ -223,7 +183,7 @@ async function getSelectedText() {
       const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
       
       if (!tab || !tab.id || tab.url.startsWith('chrome://')) {
-        console.log('Cannot access this page');
+        console.error('Cannot access this page');
         return null;
       }
   
@@ -232,8 +192,8 @@ async function getSelectedText() {
         func: () => window.getSelection().toString().trim()
       });
       
-      console.log('Selected text:', result);
       return result;
+
     } catch (error) {
       console.error('Error getting selected text:', error);
       return null;
@@ -318,9 +278,7 @@ async function saveWord(db, label) {
   if (!label) return;
 
   try {
-    console.log('Starting DB lookup for:', label);
     const record = await dbManager.getRecord(label);
-    console.log('DB lookup completed for:', label);
 
     if (record === null || record === undefined) {
       await rateLimiter.checkRateLimit();
@@ -336,10 +294,7 @@ async function saveWord(db, label) {
         try {
           // Add record
           const id = dbManager.addRecord(db, word, data, lang, apiurl);
-          console.log('Word saved');
-  
-          const notificationId = 'save-notification-' + Date.now();
-  
+
         } catch (error) {
           console.error('Error:', error);
         }
@@ -362,13 +317,13 @@ async function saveWord(db, label) {
 let adding = false;
   
 chrome.commands.onCommand.addListener(async (command) => {
-  console.log('Command received:', command);
+  // Command received
   
   if (command === "save-selected" && adding === false) {  // Changed from "save-word" to "save-selected"
     adding = true;
 
       try {
-        console.log('Attempting to save selected text');
+        // Attempting to save selected text
         const selectedText = await getSelectedText();
         
         if (selectedText) {

@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const words = storage.words || [];
           words.push(result);
           await chrome.storage.local.set({ words: words });
-          console.log('Word saved:', result);
+          // Word saved
         } catch (err) {
           console.error('Error saving word:', err);
         }

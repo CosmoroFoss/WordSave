@@ -45,6 +45,15 @@ const PopupManager = {
         this.updatePosition(e);
     },
 
+    showList(e, ul) {
+        while (this.popup.firstChild) {
+            this.popup.removeChild(this.popup.firstChild);
+        }
+        this.popup.appendChild(ul);
+        this.popup.style.display = 'block';
+        this.updatePosition(e);
+    },
+
     // Hide popup
     hide() {
         this.popup.style.display = 'none';
@@ -112,7 +121,7 @@ document.addEventListener('mousemove', async (event) => {
 
             const selectedText = selection.toString();
 
-            if (selectedText.trim().length > 0) {
+            if (selectedText.trim().length > 0) {                
                 // get saved word from DB, display if it exists
                 const response = await chrome.runtime.sendMessage({ 
                     action: 'getRecord',
@@ -121,7 +130,15 @@ document.addEventListener('mousemove', async (event) => {
 
                 if (response.record) {
                     const data = JSON.parse(response.record.APIdata);
-                    PopupManager.show(event, data.meanings[0].definitions[0].definition);
+                    const ul = document.createElement('ul');
+
+                    data.meanings[0].definitions.forEach(definition => {
+                        const li = document.createElement('li');
+                        li.textContent = definition.definition;
+                        ul.appendChild(li);
+                    });
+
+                    PopupManager.showList(event, ul); //data.meanings[0].definitions[0].definition
                 }
                 else 
                 {

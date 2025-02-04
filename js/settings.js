@@ -35,7 +35,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Save settings
     document.getElementById('saveSettings').addEventListener('click', async () => {
         await ttsHandler.saveSettings(voiceSelect.value, speedControl.value, pitchControl.value);
-        console.log('Settings saved!');
     });
 
     const cursorTrackingCheckbox = document.getElementById('cursorTrackingToggle');
@@ -57,11 +56,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('cursorTrackingToggle').addEventListener('change', async () => {
         if (cursorTrackingCheckbox.checked) {
             await chrome.storage.local.set({ controlSettings: true });
-            console.log("Cursor Tracker Settings saved!");
           } else {
             await chrome.storage.local.set({ controlSettings: false });
-            console.log("Cursor Tracker Settings saved!");
           }
+          // Cursor Tracker Settings saved
     });
 
     async function displayCurrentShortcuts() {
