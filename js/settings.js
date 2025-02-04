@@ -104,7 +104,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = `vocabulary-backup-${timestamp}.json`;
-                
+
                 // Trigger download
                 document.body.appendChild(a);
                 a.click();
@@ -112,9 +112,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Cleanup
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                
-                // Show success message
-                showNotification('Data exported successfully!', 'success');
+
+                //showNotification('Data exported successfully!', 'success');
             } catch (error) {
                 console.error('Export failed:', error);
                 showNotification('Failed to export data', 'error');
