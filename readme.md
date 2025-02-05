@@ -46,7 +46,7 @@ module.exports = {
 To compile:
 
 ```bash
-npx tailwindcss -o tailwind.css --minify
+npx tailwindcss -o css/tailwind.css --minify
 ```
 
 ### Load the extension locally
