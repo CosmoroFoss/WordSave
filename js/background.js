@@ -275,43 +275,56 @@ export async function getMeaning(record) {
 }
   
 async function saveWord(db, label) {
-  if (!label) return;
+    if (!label) return;
 
-  try {
-    const record = await dbManager.getRecord(label);
+    try {
+        // Get the current tab to send messages to content script
+        const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+        
+        // Notify content script that save is starting
+        await chrome.tabs.sendMessage(tab.id, {
+            action: 'wordSaveStarted'
+        });
 
-    if (record === null || record === undefined) {
-      await rateLimiter.checkRateLimit();
-      const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${label}`);
-      const jsonObject = await response.json();
-  
-      if (jsonObject && jsonObject[0]) {
-        const word = label;
-        const data = JSON.stringify(jsonObject[0]);
-        const lang = 'en';
-        const apiurl = 'dictionaryapi.dev'
-      
-        try {
-          // Add record
-          const id = dbManager.addRecord(db, word, data, lang, apiurl);
+        const record = await dbManager.getRecord(label);
 
-        } catch (error) {
-          console.error('Error:', error);
+        if (record === null || record === undefined) {
+            await rateLimiter.checkRateLimit();
+            const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${label}`);
+            const jsonObject = await response.json();
+
+            if (jsonObject && jsonObject[0]) {
+                const word = label;
+                const data = JSON.stringify(jsonObject[0]);
+                const lang = 'en';
+                const apiurl = 'dictionaryapi.dev'
+
+                try {
+                    // Add record
+                    await dbManager.addRecord(db, word, data, lang, apiurl);
+                    
+                    // Notify content script that save is complete
+                    await chrome.tabs.sendMessage(tab.id, {
+                        action: 'wordSaveCompleted'
+                    });
+
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            }
         }
-      }
+    } catch (err) {
+        console.error('Error saving word:', err);
+        
+        // Error notification
+        chrome.notifications.create({
+            type: 'basic',
+            iconUrl: chrome.runtime.getURL('../assets/images/wordsave_book_logo128.png'),
+            title: 'Error',
+            message: 'Failed to save word',
+            priority: 2
+        });
     }
-  } catch (err) {
-      console.error('Error saving word:', err);
-      
-      // Error notification
-      chrome.notifications.create({
-          type: 'basic',
-          iconUrl: chrome.runtime.getURL('../assets/images/wordsave_book_logo128.png'),
-          title: 'Error',
-          message: 'Failed to save word',
-          priority: 2
-      });
-  }
 }
 
 let adding = false;

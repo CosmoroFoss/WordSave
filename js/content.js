@@ -10,6 +10,8 @@ const PopupManager = {
             this.popup = document.createElement('div');
             this.popup.id = 'myExtensionPopup';
             this.popup.style.cssText = `
+                all: initial;
+                font-family: monospace, sans-serif;
                 position: fixed;
                 display: none;
                 background: white;
@@ -20,6 +22,29 @@ const PopupManager = {
                 z-index: 10000;
                 pointer-events: none;
             `;
+
+            const style = document.createElement('style');
+            style.textContent = `
+                #myExtensionPopup {
+                    all: initial; /* Reset inherited styles */
+                    font-family: monospace, sans-serif;
+                }
+                #myExtensionPopup ul {
+                    all: initial;
+                    font-family: inherit;
+                    font-size: 0.9em;
+                    list-style-type: none;
+                    padding-left: 0;
+                    margin: 0;
+                }
+                #myExtensionPopup li {
+                    all: initial;
+                    font-family: inherit;
+                    padding: 2px 0;
+                    margin-bottom: 2px;
+                }
+            `;
+            document.head.appendChild(style);
             document.body.appendChild(this.popup);
         }
     },
@@ -45,10 +70,35 @@ const PopupManager = {
         this.updatePosition(e);
     },
 
-    showList(e, ul) {
+    showList(e, ul, word, transcription) {
         while (this.popup.firstChild) {
             this.popup.removeChild(this.popup.firstChild);
         }
+
+        const wordElement = document.createElement('div');
+        wordElement.textContent = word;
+        wordElement.style.cssText = `
+            font-size: 1em;
+            font-weight: bold;
+            margin-bottom: 4px;
+            display: block;
+        `;
+        this.popup.appendChild(wordElement);
+        
+        if (transcription) {
+            const transcriptionElement = document.createElement('div');
+            transcriptionElement.textContent = transcription;
+            transcriptionElement.style.cssText = `
+                font-size: 0.7em;
+                font-weight: lighter;
+                font-style: italic;
+                color: #666;
+                margin-bottom: 4px;
+                display: block;
+            `;
+            this.popup.appendChild(transcriptionElement);
+        }
+
         this.popup.appendChild(ul);
         this.popup.style.display = 'block';
         this.updatePosition(e);
@@ -65,10 +115,86 @@ const PopupManager = {
             this.popup.remove();
             this.popup = null;
         }
-    }
+    },
+
+    showLoading: function(e) {
+        this.isLoading = true;
+        this.wordBeingSaved = this.currentWord;
+        const loadingHtml = `
+            <div class="loading-spinner" style="
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                border: 3px solid #f3f3f3;
+                border-top: 3px solid #3498db;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            ">
+            </div>
+            <style>
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            </style>
+            <span style="margin-left: 10px">Saving word...</span>
+        `;
+        this.show(e, loadingHtml);
+    },
+
+    currentWord: null,
+    currentEvent: null,
+
+    updateForCurrentWord: async function() {
+        if (this.currentWord && this.currentEvent) {
+            const response = await chrome.runtime.sendMessage({ 
+                action: 'getRecord',
+                params: { word: this.currentWord }
+            });
+
+            if (response.record) {
+                const data = JSON.parse(response.record.APIdata);
+                const transcription = data.phonetic;
+                const ul = document.createElement('ul');
+
+                for(let i=0; i<4 && i < data.meanings[0].definitions.length; i++) {
+                    const li = document.createElement('li');
+                    li.textContent = data.meanings[0].definitions[i].definition;
+                    ul.appendChild(li);
+                }
+
+                /*data.meanings[0].definitions.forEach(definition => {
+                    
+                });*/
+
+                this.showList(this.currentEvent, ul, this.currentWord, transcription);
+            }
+        }
+    },
+
+    isLoading: false,
+    wordBeingSaved: null
 };
 
 PopupManager.init();
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'wordSaveStarted') {
+        if (PopupManager.currentWord && PopupManager.currentEvent) {
+            PopupManager.showLoading(PopupManager.currentEvent);
+        }
+    } else if (request.action === 'wordSaveCompleted') {
+        PopupManager.isLoading = false;
+        PopupManager.wordBeingSaved = null;
+        PopupManager.updateForCurrentWord();
+    }
+});
+
+// Add this near the top of the file, after PopupManager initialization
+window.lastMouseEvent = null;
+document.addEventListener('mousemove', (e) => {
+    window.lastMouseEvent = e;
+});
 
 let mouseDown = false;
 document.addEventListener('mousedown', () => {
@@ -121,7 +247,17 @@ document.addEventListener('mousemove', async (event) => {
 
             const selectedText = selection.toString();
 
-            if (selectedText.trim().length > 0) {                
+            if (selectedText.trim().length > 0) {
+                // Store current word and event
+                PopupManager.currentWord = selectedText;
+                PopupManager.currentEvent = event;
+                
+                // If this word is currently being saved, show the loading spinner
+                if (PopupManager.isLoading && selectedText === PopupManager.wordBeingSaved) {
+                    PopupManager.showLoading(event);
+                    return;
+                }
+                
                 // get saved word from DB, display if it exists
                 const response = await chrome.runtime.sendMessage({ 
                     action: 'getRecord',
@@ -130,18 +266,23 @@ document.addEventListener('mousemove', async (event) => {
 
                 if (response.record) {
                     const data = JSON.parse(response.record.APIdata);
+                    const transcription = data.phonetic;
                     const ul = document.createElement('ul');
 
-                    data.meanings[0].definitions.forEach(definition => {
+                    for(let i=0; i<4 && i < data.meanings[0].definitions.length; i++) {
                         const li = document.createElement('li');
-                        li.textContent = definition.definition;
+                        li.textContent = data.meanings[0].definitions[i].definition;
                         ul.appendChild(li);
-                    });
+                    }
 
-                    PopupManager.showList(event, ul); //data.meanings[0].definitions[0].definition
+                    /*
+                    data.meanings[0].definitions.forEach(definition => {
+                        
+                    });*/
+
+                    PopupManager.showList(event, ul, selectedText, transcription);
                 }
-                else 
-                {
+                else {
                     PopupManager.show(event, 'Word not saved in WordSafe');
                 }
             }
