@@ -1,4 +1,4 @@
-import { saveWord, getSelectedText } from "./wordhandler";
+import { saveWord, getSelectedText } from "./wordhandler.js";
 
 export async function saveSelected(db, dbManager) {
 	// Attempting to save selected text

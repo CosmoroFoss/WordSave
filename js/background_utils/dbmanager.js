@@ -1,3 +1,5 @@
+import { switchToTab } from '../helper.js';
+
 export let db;
 let dbInstance = null;
 
@@ -25,6 +27,7 @@ export class DBManager {
   
 			request.onsuccess = (event) => {
 			  db = event.target.result;
+			  this.initialized = true;
 			  resolve(request.result);
 			}
   
@@ -40,7 +43,6 @@ export class DBManager {
 				}
 			};
 		});
-		this.initialized = true;
 	}
   
 	async addRecord(db, word, data, lang, apiurl) {
@@ -56,9 +58,6 @@ export class DBManager {
 		
 		let isResolved = false;
 		const transaction = db.transaction([this.STORE_NAME], 'readwrite');
-		if (transaction.active) {
-  
-		}
   
 		transaction.oncomplete = (event) => {
 		  if (!isResolved) {

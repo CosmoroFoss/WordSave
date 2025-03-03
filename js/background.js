@@ -1,4 +1,4 @@
-import { switchToTab } from '/js/helper.js';
+import { switchToTab } from './helper.js';
 import { welcome } from './background_utils/postinstall.js';
 import { createContextMenus } from './background_utils/contextmenus.js';
 import { db, DBManager } from './background_utils/dbmanager.js';
@@ -19,7 +19,7 @@ init();
 /* runtime */
 
 chrome.runtime.onInstalled.addListener(function(details) {
-  welcome();
+  welcome(details);
   createContextMenus();
 });
 
@@ -143,7 +143,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   
   if (selectedText) {
     if (info.menuItemId === 'lookupWord') {
-      contextMenuLookupWord(selectedText);
+      contextMenuLookupWord(selectedText, popoutWindowID, tab);
     }
     else if (info.menuItemId === 'saveWord') {
       contextMenuSaveWord(selectedText, db, dbManager);

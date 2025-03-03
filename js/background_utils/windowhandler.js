@@ -5,7 +5,8 @@ export async function checkWindowExistence(windowID) {
 		return true;
 	} catch {
 		// Window doesn't exist
-		popoutWindowID = -1;
+		windowID = -1;
+		// popoutWindowID = -1;
 		return false;
 	}
   }
