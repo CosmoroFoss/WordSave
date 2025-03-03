@@ -1,163 +1,12 @@
 import { switchToTab } from '/js/helper.js';
+import { welcome } from './background_utils/postinstall.js';
+import { createContextMenus } from './background_utils/contextmenus.js';
+import { db, DBManager } from './background_utils/dbmanager.js';
+import { contextMenuLookupWord, contextMenuSaveWord } from './background_utils/contextmenus.js';
+import { checkWindowExistence } from './background_utils/windowhandler.js';
+import { saveSelected } from './background_utils/commandhandler.js';
 
-class APIRateLimiter {
-  constructor(requestsPerMinute) {
-      this.requestsPerMinute = requestsPerMinute;
-      this.requests = [];
-  }
-
-  async checkRateLimit() {
-      const now = Date.now();
-      // Remove requests older than 1 minute
-      this.requests = this.requests.filter(time => now - time < 60000);
-      
-      if (this.requests.length >= this.requestsPerMinute) {
-          const oldestRequest = this.requests[0];
-          const waitTime = 60000 - (now - oldestRequest);
-          if (waitTime > 0) {
-              await new Promise(resolve => setTimeout(resolve, waitTime));
-          }
-      }
-      
-      this.requests.push(now);
-  }
-}
-
-const rateLimiter = new APIRateLimiter(30);
-let db;
-
-class DBManager {
-  constructor() {
-      this.db = null;
-      this.DB_NAME = 'WordSaveDB';
-      this.DB_VERSION = 1;
-      this.STORE_NAME = 'wordRecords';
-  }
-
-  // Open database connection
-  async init() {
-      return new Promise((resolve, reject) => {
-          const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
-
-          request.onerror = () => reject(request.error);
-
-          request.onsuccess = (event) => {
-            db = event.target.result;
-            resolve(request.result);
-          }
-
-          // Create object store when database is first created
-          request.onupgradeneeded = (event) => {
-              const db = event.target.result;
-
-              if (!db.objectStoreNames.contains(this.STORE_NAME)) {
-                const objectStore = db.createObjectStore(this.STORE_NAME, { keyPath: 'id', autoIncrement: true });
-
-                // too hard
-                objectStore.createIndex("uniqueWordIndex", "word", { unique: true });
-              }
-          };
-      });
-  }
-
-  async addRecord(db, word, data, lang, apiurl) {
-    if (!db) return;
-
-      const record = {
-      timestamp: new Date().toISOString(),
-      word : word,
-      APIdata: data, // Serialize complex object to string
-      lang: lang,
-      APIurl: apiurl
-      };
-      
-      let isResolved = false;
-      const transaction = db.transaction([this.STORE_NAME], 'readwrite');
-      if (transaction.active) {
-
-      }
-
-      transaction.oncomplete = (event) => {
-        if (!isResolved) {
-          isResolved = true;
-        }
-      };
-
-      const store = transaction.objectStore(this.STORE_NAME);
-      const request = store.add(record);
-      
-      request.onerror = () => {
-        if (!isResolved) {
-          isResolved = true;
-          reject(request.error);
-        }
-      };
-  }
-
-  // Delete a record
-  async deleteRecord(word) {
-      return new Promise((resolve, reject) => {
-          const transaction = db.transaction([this.STORE_NAME], 'readwrite');
-          const store = transaction.objectStore(this.STORE_NAME);
-    const request = store.getAll();
-
-    request.onsuccess = () => {
-      const record = request.result.find(r => 
-        r.word === word
-      );
-
-      store.delete(record.id);
-      switchToTab('/html/list.html');
-    };
-    request.onerror = () => reject(request.error);
-      });
-  }
-
-  async getRecord(word) {
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([this.STORE_NAME], 'readonly');
-    const store = transaction.objectStore(this.STORE_NAME);
-    const request = store.getAll();
-
-    request.onsuccess = () => {
-      const record = request.result.find(r => 
-        r.word === word
-      );
-      resolve(record || null);
-    };
-    request.onerror = () => reject(request.error);
-  });
-}
-
-  // Get all records
-  async getAllRecords() {
-      return new Promise((resolve, reject) => {
-        const transaction = db.transaction([this.STORE_NAME], 'readonly');
-        const store = transaction.objectStore(this.STORE_NAME);
-        const request = store.getAll();
-
-        request.onsuccess = () => {
-
-          const records = request.result.map(record => {
-            try {
-              return {
-                ...record,
-                APIdata: JSON.parse(record.APIdata)
-              };
-            } catch (error) {
-              console.error('Parsing error:', error);
-              return record; // Return unchanged if parsing fails
-            }
-          });
-          
-          resolve(records);
-        };
-
-        request.onerror = () => reject(request.error);
-      });
-  }
-}
-
+var popoutWindowID = -1;
 let dbManager;
 
 // Initialize once when extension starts
@@ -167,38 +16,12 @@ async function init() {
 }
 init();
 
-chrome.action.onClicked.addListener((tab) => {
-  // Extension clicked in tab
-  switchToTab('/html/list.html');
-});
+/* runtime */
 
 chrome.runtime.onInstalled.addListener(function(details) {
-  if (details.reason === "install") {
-    switchToTab('/html/welcome.html');
-  }
+  welcome();
+  createContextMenus();
 });
-
-async function getSelectedText() {
-    try {
-      const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
-      
-      if (!tab || !tab.id || tab.url.startsWith('chrome://')) {
-        console.error('Cannot access this page');
-        return null;
-      }
-  
-      const [{result}] = await chrome.scripting.executeScript({
-        target: {tabId: tab.id},
-        func: () => window.getSelection().toString().trim()
-      });
-      
-      return result;
-
-    } catch (error) {
-      console.error('Error getting selected text:', error);
-      return null;
-    }
-  }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const { action, params } = request;
@@ -254,6 +77,144 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Add other message handlers as needed
 });
 
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+  const { action, params } = message;
+
+  if (message.action == "lookupWord") {
+    sendResponse({ success: true, wordData: "hello" });
+  } else
+  if (message.action === "createWindow") {
+    var windowExists = await checkWindowExistence(popoutWindowID);
+
+    // Get screen dimensions
+    chrome.windows.getCurrent((currentWindow) => {
+      const { x, y } = message.position;
+      const word = message.searchedWord;
+
+      const screenWidth = currentWindow.width;
+      const screenHeight = currentWindow.height;
+
+      // Define popout window dimensions
+      const popoutWidth = 400;
+      const popoutHeight = 300;
+
+      // Calculate top-right position
+      const left = screenWidth - popoutWidth; // Right edge of the screen
+      const top = 0; // Top edge of the screen
+
+      // If no ID exists, create new window and save ID
+      if(!windowExists) {
+      
+        // Create the window
+        chrome.windows.create({
+          url: "html/popout_window.html",
+          type: "popup",
+          width: popoutWidth,
+          height: popoutHeight,
+          left: Math.round(x - popoutWidth),
+          top: Math.round(y)
+        }, (window) => {
+          if (window) {
+            popoutWindowID = window.id;
+            document.getElementById('wordInput').value = word;
+            sendResponse({ success: true });
+          } else {
+            sendResponse({ success: false, error: "Failed to create window" });
+          }
+        });
+      }
+      // If ID exists, focus the window
+      else {
+        chrome.windows.update(popoutWindowID, {focused: true});
+      }
+
+    });
+
+    return true; // Keep the message channel open for async response
+  }
+});
+
+/* context menus */
+
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  // report to user if the word is already saved, is being saved,
+  // got saved successfully or failed to save
+  const selectedText = info.selectionText.trim();
+  
+  if (selectedText) {
+    if (info.menuItemId === 'lookupWord') {
+      contextMenuLookupWord(selectedText);
+    }
+    else if (info.menuItemId === 'saveWord') {
+      contextMenuSaveWord(selectedText, db, dbManager);
+    }
+  }
+});
+
+/* commands */
+
+chrome.commands.onCommand.addListener(async (command) => {
+  if (command === "save-selected") {  // Changed from "save-word" to "save-selected"
+    saveSelected(db, dbManager);
+  }
+  else if (command === "show-list") {
+    switchToTab('/html/list.html');
+  }
+  else if (command === "show-options") {
+    switchToTab('/html/options.html');
+  }
+});
+
+/*
+chrome.windows.onFocusChanged.addListener((windowId) => {
+	if (windowId === chrome.windows.WINDOW_ID_NONE) {
+	  // No window is focused
+	  return;
+	}
+  
+	// Get the undocked window by ID (you need to store this ID when creating the window)
+	chrome.windows.get(windowId, (window) => {
+	  if (window.type === "popup") {
+		// Focus the undocked window
+		chrome.windows.update(windowId, { focused: true });
+	  }
+	});
+});*/
+
+// *************************************************************************** //
+
+/*
+replaced with popup
+
+chrome.action.onClicked.addListener((tab) => {
+  // Extension clicked in tab
+  switchToTab('/html/list.html');
+});*/
+
+/*
+async function getSelectedText() {
+    try {
+      const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+      
+      if (!tab || !tab.id || tab.url.startsWith('chrome://')) {
+        console.error('Cannot access this page');
+        return null;
+      }
+  
+      const [{result}] = await chrome.scripting.executeScript({
+        target: {tabId: tab.id},
+        func: () => window.getSelection().toString().trim()
+      });
+      
+      return result;
+
+    } catch (error) {
+      console.error('Error getting selected text:', error);
+      return null;
+    }
+  }*/
+
+/*
 export async function getPhonetic(record) {
   try {
     return record.APIdata.phonetic;
@@ -273,6 +234,7 @@ export async function getMeaning(record) {
       return null;
   }
 }
+
   
 async function saveWord(db, label) {
     if (!label) return;
@@ -326,39 +288,4 @@ async function saveWord(db, label) {
         });
     }
 }
-
-let adding = false;
-  
-chrome.commands.onCommand.addListener(async (command) => {
-  // Command received
-  
-  if (command === "save-selected" && adding === false) {  // Changed from "save-word" to "save-selected"
-    adding = true;
-
-      try {
-        // Attempting to save selected text
-        const selectedText = await getSelectedText();
-        
-        if (selectedText) {
-          await saveWord(db, selectedText);
-        } else {
-          chrome.notifications.create({
-            type: 'basic',
-            iconUrl: chrome.runtime.getURL('../assets/images/wordsave_book_logo128.png'),
-            title: 'No Text Selected',
-            message: 'Please select some text to save'
-          });
-        }
-      }
-      finally {
-        adding = false;
-      }
-
-  }
-  else if (command === "show-list") {
-    switchToTab('/html/list.html');
-  }
-  else if (command === "show-options") {
-    switchToTab('/html/options.html');
-  }
-});
+*/

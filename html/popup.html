@@ -6,12 +6,26 @@
   </head>
   <body>
     <div id="main-content">
+      <button id="popout" class="popout-btn" title="Pop out to a new window">
+        <span class="material-icons">open_in_new</span>
+      </button>
+
+      <div class="search-section">
+        <input type="text" id="wordInput" placeholder="Enter a word...">
+        <button id="searchButton">
+          <span class="material-symbols-outlined">
+          search
+          </span></button>
+      </div>
+
+      <p id="wordDefinition"></p>
+
       <button id="saveButton" title="Save word (Ctrl+S)">Save!</button>
       <button id="showListButton" title="Show list (Ctrl+L)">Show Saved Words</button>
       <button id="optionsButton" title="Show options (Ctrl+O)">Show Options Page</button>
     </div>
  
-    <div class="menu-item" id="helpButton">Help & About</div>
+    <!--<div class="menu-item" id="helpButton">Help & About</div>-->
  
     <script defer type="module" src="/js/popup.js"></script>
   </body>

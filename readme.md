@@ -10,7 +10,7 @@ Wordsave uses indexedDB for storing word objects.
 
 The extension is currently only supported on Chrome and Chromium browsers and is not intended to be used on mobile. It uses dictionaryapi.dev for word lookups and built-in Chrome text-to-speech API for voice synthesis.
 
-### What's with the quality with some of the word definitions?
+### What's with the quality of some of the word definitions?
 
 The dictionaryapi uses the Wiktionary freely available word definitions, which are created and maintained by internet volunteers. If there is enough demand, the API may be changed to a more reputable online dictionary like Merriam-Webster.
 
@@ -47,6 +47,12 @@ To compile:
 
 ```bash
 npx tailwindcss -o css/tailwind.css --minify
+```
+
+or unminified with:
+
+```bash
+npx tailwindcss -o css/tailwind.css
 ```
 
 ### Load the extension locally

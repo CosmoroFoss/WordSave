@@ -6,11 +6,13 @@
     "permissions": 
     ["storage",
       "tabs",
+      "windows",
       "activeTab",
       "scripting",
       "notifications",
       "commands",
-      "tts"],
+      "tts",
+      "contextMenus"],
     "commands": {
       "save-selected": {      
         "suggested_key": {
@@ -43,6 +45,7 @@
       "type": "module"
     },
     "action": {
+      "default_popup": "html/popup.html",
       "default_icon": {
         "16": "/assets/images/wordsave_book_logo16.png",
         "32": "/assets/images/wordsave_book_logo32.png",

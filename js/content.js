@@ -1,12 +1,18 @@
 // Create a singleton popup manager
 const PopupManager = {
+    shadow: null,
     popup: null,
     currentTarget: null,
     offset: { x: 10, y: 10 },
     
     // Initialize the popup once
     init() {
-        if (!this.popup) {
+        if (!this.shadow) {
+            const container = document.createElement('div');
+            document.body.appendChild(container);
+            this.shadow = container.attachShadow({ mode: 'open' });
+
+            //this.popup = document.createElement('div');
             this.popup = document.createElement('div');
             this.popup.id = 'myExtensionPopup';
             this.popup.style.cssText = `
@@ -22,6 +28,8 @@ const PopupManager = {
                 z-index: 10000;
                 pointer-events: none;
             `;
+
+            this.shadow.appendChild(this.popup);
 
             const style = document.createElement('style');
             style.textContent = `
@@ -45,7 +53,7 @@ const PopupManager = {
                 }
             `;
             document.head.appendChild(style);
-            document.body.appendChild(this.popup);
+            //document.body.appendChild(this.popup);
         }
     },
 
@@ -199,8 +207,8 @@ document.addEventListener('mousemove', (e) => {
 let mouseDown = false;
 document.addEventListener('mousedown', () => {
 	mouseDown = true
-	const selection = window.getSelection();
-	selection.empty();
+	//const selection = window.getSelection();
+	//selection.empty();
 });
 document.addEventListener('mouseup', () => mouseDown = false);
 
