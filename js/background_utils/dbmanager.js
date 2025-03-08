@@ -94,7 +94,7 @@ export class DBManager {
 	  request.onerror = () => reject(request.error);
 		});
 	}
-  
+
 	async getRecord(word) {
 	return new Promise((resolve, reject) => {
 	  const transaction = db.transaction([this.STORE_NAME], 'readonly');

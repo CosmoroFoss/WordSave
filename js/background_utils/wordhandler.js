@@ -39,9 +39,7 @@ export async function saveWord(db, label, dbManager) {
         const record = await dbManager.getRecord(label);
 
         if (record === null || record === undefined) {
-            await rateLimiter.checkRateLimit();
-            const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${label}`);
-            const jsonObject = await response.json();
+            const jsonObject = await lookupWordAPI(label);
 
             if (jsonObject && jsonObject[0]) {
                 const word = label;
@@ -75,4 +73,12 @@ export async function saveWord(db, label, dbManager) {
             priority: 2
         });
     }
+}
+
+export async function lookupWordAPI(label) {
+    await rateLimiter.checkRateLimit();
+    const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${label}`);
+    const jsonObject = await response.json();
+
+    return jsonObject;
 }

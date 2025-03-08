@@ -1,4 +1,4 @@
-import { switchToTab } from '/js/helper.js';
+import { switchToTab } from './helper.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -15,7 +15,30 @@ document.addEventListener('DOMContentLoaded', () => {
       const wordInput = document.getElementById('wordInput');
       wordInput.value = word;
       // Update your popup UI accordingly
+
+      const wordData = message.wordData; // Assuming response contains the word data
+      const wordDefinition = document.getElementById('wordDefinition');
+
+      if (wordDefinition && wordData) {
+        wordDefinition.textContent = wordData; // Insert the word data into the input field
+      }
+
+      /*chrome.runtime.sendMessage({ 
+        action: "lookupWord", 
+        params: { word: word }
+      }, (response) => {
+        if (response /*&& response.success*//*) {
+          const wordData = response.wordData; // Assuming response contains the word data
+          const wordDefinition = document.getElementById('wordDefinition');
+  
+          if (wordDefinition && wordData) {
+            wordDefinition.textContent = wordData; // Insert the word data into the input field
+          }
+        }
+      });*/
     }
+
+    return true;
   });
 
   //document.getElementById('helpButton').addEventListener('click', function() {
@@ -26,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.runtime.openOptionsPage();
   });
 
+  const searchButton = document.getElementById('searchButton');
   const saveButton = document.getElementById('saveButton');
   const showListButton = document.getElementById('showListButton');
 
@@ -35,9 +59,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     chrome.runtime.sendMessage({ 
       action: "lookupWord", 
-      word: { word }
+      params: { word: word }
     }, (response) => {
-      if (response && response.success) {
+      if (response /*&& response.success*/) {
         const wordData = response.wordData; // Assuming response contains the word data
         const wordDefinition = document.getElementById('wordDefinition');
 

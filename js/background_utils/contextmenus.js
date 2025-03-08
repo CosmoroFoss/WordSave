@@ -1,5 +1,6 @@
 import { saveWord } from "./wordhandler.js";
 import { checkWindowExistence } from "./windowhandler.js";
+import { lookupWord } from "./messagehandler.js";
 
 export function createContextMenus() {
 	chrome.contextMenus.create({
@@ -24,31 +25,41 @@ export function createContextMenus() {
 	});
 }
 
-export async function contextMenuLookupWord(selectedText, popoutWindowID, tab) {
-	chrome.tabs.sendMessage(tab.id, {
+export async function contextMenuLookupWord(selectedText, popoutWindowID, tab, db, dbManager) {
+	/*chrome.tabs.sendMessage(tab.id, {
 		action: 'lookupWord',
 		word: selectedText
-	});
+	})*/
 	
-	// if there is no window, show the popup
-	if (!await checkWindowExistence(popoutWindowID)) {
-		chrome.action.openPopup();
-		popoutWindowID = -1;
-
-		chrome.runtime.sendMessage({
-		action: 'contextMenuLookupWord',
+	/*chrome.runtime.sendMessage({
+		action: 'lookupWord',
 		word: selectedText
-		});
-	}
-	// if there is a popout window, focus it and send it the selected word
-	else {
-		chrome.windows.update(popoutWindowID, {focused: true});
+	}).then(response => console.log(response));*/
 
-		chrome.runtime.sendMessage({
-		action: 'contextMenuLookupWordOnPopout',
-		word: selectedText
-		});
-	}
+	const record = await lookupWord(dbManager, null, selectedText);
+
+	//lookupWord(dbManager, null, selectedText).then(async (record) => {
+		// if there is no window, show the popup
+		if (!await checkWindowExistence(popoutWindowID)) {
+			await chrome.action.openPopup();
+			popoutWindowID = -1;
+
+			chrome.runtime.sendMessage({
+			action: 'contextMenuLookupWord',
+			word: selectedText ,
+			wordData: record
+			});
+		}
+		// if there is a popout window, focus it and send it the selected word
+		else {
+			chrome.windows.update(popoutWindowID, {focused: true});
+
+			chrome.runtime.sendMessage({
+			action: 'contextMenuLookupWordOnPopout',
+			word: selectedText
+			});
+		}
+	//});
 }
 
 export async function contextMenuSaveWord(selectedText, db, dbManager) {
