@@ -16,7 +16,6 @@ const PopupManager = {
             this.popup = document.createElement('div');
             this.popup.id = 'myExtensionPopup';
             this.popup.style.cssText = `
-                all: initial;
                 font-family: monospace, sans-serif;
                 position: fixed;
                 display: none;
@@ -34,11 +33,9 @@ const PopupManager = {
             const style = document.createElement('style');
             style.textContent = `
                 #myExtensionPopup {
-                    all: initial; /* Reset inherited styles */
                     font-family: monospace, sans-serif;
                 }
                 #myExtensionPopup ul {
-                    all: initial;
                     font-family: inherit;
                     font-size: 0.9em;
                     list-style-type: none;
@@ -46,7 +43,6 @@ const PopupManager = {
                     margin: 0;
                 }
                 #myExtensionPopup li {
-                    all: initial;
                     font-family: inherit;
                     padding: 2px 0;
                     margin-bottom: 2px;
@@ -291,7 +287,8 @@ document.addEventListener('mousemove', async (event) => {
                     PopupManager.showList(event, ul, selectedText, transcription);
                 }
                 else {
-                    PopupManager.show(event, 'Word not saved in WordSafe');
+                    //PopupManager.show(event, 'Word not saved in WordSafe');
+                    PopupManager.hide();
                 }
             }
             else 
