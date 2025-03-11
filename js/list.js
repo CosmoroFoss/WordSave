@@ -1,5 +1,5 @@
-import { toggleWordCell } from '/js/helper.js';
-import { switchToTab } from '/js/helper.js';
+import { toggleWordCell } from './helper.js';
+import { switchToTab } from './helper.js';
 
 document.getElementById('openSettings').addEventListener('click', () => {
     switchToTab('/html/options.html');
@@ -140,9 +140,33 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const wordCell = document.createElement('td');
                 wordCell.className = 'word-cell box-border px-6 w-2/12 min-w-0 truncate';
 
+                const wordCellDiv = document.createElement('div');
+                wordCellDiv.className = 'flex items-center gap-x-1';
+
                 let p = document.createElement('p');
                 p.textContent = record.word.toLowerCase();
-                wordCell.appendChild(p);
+                //wordCell.appendChild(p);
+
+                const speakBtn = document.createElement('button');
+                speakBtn.innerHTML = '<span class="material-icons !text-sm">volume_up</span>';
+                speakBtn.className = 'speak-btn inline-flex items-center';
+                speakBtn.title = 'Speak word';
+                
+                speakBtn.addEventListener('click', async () => {
+                    const settings = await chrome.storage.local.get('voiceSettings');
+                    const voiceSettings = settings.voiceSettings || {
+                        voice: 'UK English Female',
+                        rate: 1.0,
+                        pitch: 1.0
+                    };
+
+                    ttsHandler.speak(record.word, speakBtn);
+                });  
+
+                wordCellDiv.appendChild(p);
+                wordCellDiv.appendChild(speakBtn);
+
+                wordCell.appendChild(wordCellDiv);
 
                 row.appendChild(wordCell);
 
@@ -174,22 +198,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Actions cell
                 const actionsCell = document.createElement('td');
                 actionsCell.className = 'actions-cell box-border px-6 w-2/12 min-w-0 truncate';
-
-                const speakBtn = document.createElement('button');
-                speakBtn.innerHTML = '<span class="material-icons">volume_up</span>';
-                speakBtn.className = 'speak-btn';
-                speakBtn.title = 'Speak word';
-                
-                speakBtn.addEventListener('click', async () => {
-                    const settings = await chrome.storage.local.get('voiceSettings');
-                    const voiceSettings = settings.voiceSettings || {
-                        voice: 'UK English Female',
-                        rate: 1.0,
-                        pitch: 1.0
-                    };
-
-                    ttsHandler.speak(record.word, speakBtn);
-                });  
 
                 // Edit button
                 const editBtn = document.createElement('button');
@@ -236,7 +244,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 });
 
-                actionsCell.appendChild(speakBtn);
+                //actionsCell.appendChild(speakBtn);
                 actionsCell.appendChild(deleteBtn);
                 row.appendChild(actionsCell);
 
@@ -260,6 +268,41 @@ document.addEventListener('DOMContentLoaded', async () => {
                     // Word cell
                     const wordCell2 = document.createElement('td');
                     wordCell2.className = 'word-cell box-border px-6 w-2/12 min-w-0';
+                    wordCell2.style.verticalAlign = 'top';
+
+                    if (meaning.synonyms && meaning.synonyms.length > 0) {
+                        let p = document.createElement('strong');
+                        p.textContent = 'Synonyms';
+    
+                        let ul = document.createElement('ul');
+    
+                        meaning.synonyms.forEach(word => {
+                            const li = document.createElement('li');
+                            li.textContent = word;
+                            //li.style.marginBottom = '10px';
+                            ul.appendChild(li);
+                        });
+    
+                        wordCell2.appendChild(p);
+                        wordCell2.appendChild(ul);
+                    }
+
+                    if (meaning.antonyms && meaning.antonyms.length > 0) {
+                        let p = document.createElement('strong');
+                        p.textContent = 'Antonyms';
+
+                        let ul = document.createElement('ul');
+
+                        meaning.antonyms.forEach(word => {
+                            const li = document.createElement('li');
+                            li.textContent = word;
+                            ul.appendChild(li);
+                        });
+
+                        wordCell2.appendChild(p);
+                        wordCell2.appendChild(ul);
+                    }
+
                     subrow2.appendChild(wordCell2);
 
                     // Phonetic cell
@@ -309,39 +352,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                             meaningCell2.appendChild(br);
                         }
                     });
-
-                    if (meaning.synonyms && meaning.synonyms.length > 0) {
-                        let p = document.createElement('strong');
-                        p.textContent = 'Synonyms';
-    
-                        let ul = document.createElement('ul');
-    
-                        meaning.synonyms.forEach(word => {
-                            const li = document.createElement('li');
-                            li.textContent = word;
-                            //li.style.marginBottom = '10px';
-                            ul.appendChild(li);
-                        });
-    
-                        actionsCell2.appendChild(p);
-                        actionsCell2.appendChild(ul);
-                    }
-
-                    if (meaning.antonyms && meaning.antonyms.length > 0) {
-                        let p = document.createElement('strong');
-                        p.textContent = 'Antonyms';
-
-                        let ul = document.createElement('ul');
-
-                        meaning.antonyms.forEach(word => {
-                            const li = document.createElement('li');
-                            li.textContent = word;
-                            ul.appendChild(li);
-                        });
-
-                        actionsCell2.appendChild(p);
-                        actionsCell2.appendChild(ul);
-                    }
 
                     subrow2.appendChild(meaningCell2);
                     subrow2.appendChild(actionsCell2);
@@ -421,7 +431,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             option.value = size;
             option.textContent = size;
             option.selected = size === rowsPerPage;
-            pageSizeSelect.className ='select';
+            pageSizeSelect.className ='words-per-page-select';
             pageSizeSelect.appendChild(option);
         });
 
