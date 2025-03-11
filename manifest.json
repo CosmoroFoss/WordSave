@@ -65,7 +65,7 @@
     "open_in_tab": true
   },
   "web_accessible_resources": [{
-    "resources": ["/assets/fonts/*"],
+    "resources": ["/assets/fonts/*", "/css/tailwind.css"],
     "matches": ["<all_urls>"]
   }]
   }

@@ -1,4 +1,5 @@
 import { switchToTab } from './helper.js';
+import { lookupUpdateUI } from './popup_utils/lookup.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -17,25 +18,25 @@ document.addEventListener('DOMContentLoaded', () => {
       // Update your popup UI accordingly
 
       const wordData = message.wordData; // Assuming response contains the word data
-      const wordDefinition = document.getElementById('wordDefinition');
+      
+      lookupUpdateUI(wordData, word);
+    }
 
-      if (wordDefinition && wordData) {
-        wordDefinition.textContent = wordData; // Insert the word data into the input field
-      }
+    if (message.action === 'contextMenuSaveWord') {
+      const word = message.word;
+      // Handle the word in your popup UI
+      const wordInput = document.getElementById('wordInput');
+      wordInput.value = word;
+      // Update your popup UI accordingly
 
-      /*chrome.runtime.sendMessage({ 
-        action: "lookupWord", 
+      const wordData = message.wordData; // Assuming response contains the word data
+      
+      lookupUpdateUI(wordData, word);
+
+      chrome.runtime.sendMessage({ 
+        action: "saveWordToDB", 
         params: { word: word }
-      }, (response) => {
-        if (response /*&& response.success*//*) {
-          const wordData = response.wordData; // Assuming response contains the word data
-          const wordDefinition = document.getElementById('wordDefinition');
-  
-          if (wordDefinition && wordData) {
-            wordDefinition.textContent = wordData; // Insert the word data into the input field
-          }
-        }
-      });*/
+      });
     }
 
     return true;
@@ -62,12 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
       params: { word: word }
     }, (response) => {
       if (response /*&& response.success*/) {
-        const wordData = response.wordData; // Assuming response contains the word data
-        const wordDefinition = document.getElementById('wordDefinition');
-
-        if (wordDefinition && wordData) {
-          wordDefinition.textContent = wordData; // Insert the word data into the input field
-        }
+        lookupUpdateUI(response, word);
       } else {
         console.error('Failed to create popout window:', response.error);
       }
@@ -75,23 +71,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   saveButton.addEventListener('click', async () => {
-    const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
-    
-    const [{result}] = await chrome.scripting.executeScript({
-      target: {tabId: tab.id},
-      function: () => window.getSelection().toString().trim()
-    });
+    const wordInput = document.getElementById('wordInput');
+    const word = wordInput.value;
 
-    if (result) {
-      try {
-        const storage = await chrome.storage.local.get('words');
-        const words = storage.words || [];
-        words.push(result);
-        await chrome.storage.local.set({ words: words });
-        // Word saved
-      } catch (err) {
-        console.error('Error saving word:', err);
-      }
+    if (word) {
+      chrome.runtime.sendMessage({ 
+        action: "saveWordToDB", 
+        params: { word: word }
+      });
     }
   });
 
@@ -99,8 +86,8 @@ document.addEventListener('DOMContentLoaded', () => {
     switchToTab('/html/list.html');
   });
 
-  document.getElementById("popout").addEventListener("click", async () => {
-    const word = document.getElementById('wordInput').value;
+  //document.getElementById("popout").addEventListener("click", async () => {
+  //  const word = document.getElementById('wordInput').value;
 
     // Send a message to the background script to create the window
     //chrome.runtime.sendMessage({ action: "createWindow" });
@@ -116,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     */
 
-    chrome.windows.getCurrent((popupWindow) => {
+    /*chrome.windows.getCurrent((popupWindow) => {
       const { left, top, width } = popupWindow;
   
       // Calculate the top-right corner coordinates
@@ -130,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
         searchedWord: word
       });
 
-      window.close();
+      window.close();*/
       /*, (response) => {
         if (response && response.success) {
           console.log('Popout window created successfully');
@@ -139,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
           console.error('Failed to create popout window:', response.error);
         }
       });*/
-    });
-  });
+    //});
+  //});
 
 });

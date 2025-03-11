@@ -29,21 +29,21 @@ export async function saveWord(db, label, dbManager) {
 
     try {
         // Get the current tab to send messages to content script
-        const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+        //const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
         
         // Notify content script that save is starting
-        await chrome.tabs.sendMessage(tab.id, {
-            action: 'wordSaveStarted'
-        });
+        //await chrome.tabs.sendMessage(tab.id, {
+        //    action: 'wordSaveStarted'
+        //});
 
         const record = await dbManager.getRecord(label);
 
         if (record === null || record === undefined) {
             const jsonObject = await lookupWordAPI(label);
 
-            if (jsonObject && jsonObject[0]) {
+            if (jsonObject) {
                 const word = label;
-                const data = JSON.stringify(jsonObject[0]);
+                const data = JSON.stringify(jsonObject);
                 const lang = 'en';
                 const apiurl = 'dictionaryapi.dev'
 
@@ -52,9 +52,9 @@ export async function saveWord(db, label, dbManager) {
                     await dbManager.addRecord(db, word, data, lang, apiurl);
                     
                     // Notify content script that save is complete
-                    await chrome.tabs.sendMessage(tab.id, {
-                        action: 'wordSaveCompleted'
-                    });
+                    //await chrome.tabs.sendMessage(tab.id, {
+                    //    action: 'wordSaveCompleted'
+                    //});
 
                 } catch (error) {
                     console.error('Error:', error);
@@ -62,7 +62,7 @@ export async function saveWord(db, label, dbManager) {
             }
         }
     } catch (err) {
-        console.error('Error saving word:', err);
+        /*console.error('Error saving word:', err);
         
         // Error notification
         chrome.notifications.create({
@@ -71,7 +71,25 @@ export async function saveWord(db, label, dbManager) {
             title: 'Error',
             message: 'Failed to save word',
             priority: 2
-        });
+        });*/
+    }
+}
+
+export async function saveWordToDB(db, label, dbManager) {
+    const record = await dbManager.getRecord(label);
+
+    if (record === null || record === undefined) {
+        const jsonObject = await lookupWordAPI(label);
+
+        if (jsonObject) {
+            const word = label;
+            const data = JSON.stringify(jsonObject);
+            const lang = 'en';
+            const apiurl = 'dictionaryapi.dev'
+
+            // Add record
+            await dbManager.addRecord(db, word, data, lang, apiurl);
+        }
     }
 }
 
@@ -80,5 +98,5 @@ export async function lookupWordAPI(label) {
     const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${label}`);
     const jsonObject = await response.json();
 
-    return jsonObject;
+    return jsonObject[0];
 }

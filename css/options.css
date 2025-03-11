@@ -12,6 +12,7 @@ body {
   }
   
   .content {
+  max-width: 800px;
 	margin-left: 220px;
 	padding: 20px;
   }

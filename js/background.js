@@ -5,6 +5,7 @@ import { db, DBManager } from './background_utils/dbmanager.js';
 import { contextMenuLookupWord, contextMenuSaveWord } from './background_utils/contextmenus.js';
 import { createWindow, getRecord, getRecords, addRecordDirectly, deleteRecord, getSettings, lookupWord } from './background_utils/messagehandler.js';
 import { saveSelected } from './background_utils/commandhandler.js';
+import { saveWordToDB } from './background_utils/wordhandler.js';
 
 var popoutWindowID = -1;
 let dbManager;
@@ -51,8 +52,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (action == "lookupWord") {
-    lookupWord(dbManager, sendResponse, params)
+    lookupWord(dbManager, sendResponse, params.word)
     .then(response => sendResponse(response))
+  }
+
+  if (action == "saveWordToDB") {
+    saveWordToDB(db, params.word, dbManager)
   }
   
   if (action === "createWindow") {
@@ -79,6 +84,11 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 /* commands */
 chrome.commands.onCommand.addListener(async (command) => {
   if (command === "save-selected") {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const activeTab = tabs[0];
+      // Use activeTab
+    });
+
     saveSelected(db, dbManager);
   }
   else if (command === "show-list") {

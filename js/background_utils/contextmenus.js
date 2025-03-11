@@ -1,4 +1,3 @@
-import { saveWord } from "./wordhandler.js";
 import { checkWindowExistence } from "./windowhandler.js";
 import { lookupWord } from "./messagehandler.js";
 
@@ -63,9 +62,23 @@ export async function contextMenuLookupWord(selectedText, popoutWindowID, tab, d
 }
 
 export async function contextMenuSaveWord(selectedText, db, dbManager) {
-	await saveWord(db, selectedText, dbManager).then(() => {
-		console.log('Word saved:', selectedText);
+	const record = await lookupWord(dbManager, null, selectedText);
+
+	//lookupWord(dbManager, null, selectedText).then(async (record) => {
+	// if there is no window, show the popup
+	//if (!await checkWindowExistence(popoutWindowID)) {
+		await chrome.action.openPopup();
+		//popoutWindowID = -1;
+
+		chrome.runtime.sendMessage({
+		action: 'contextMenuSaveWord',
+		word: selectedText ,
+		wordData: record
+		});
+	}
+	
+	/*await saveWord(db, selectedText, dbManager).then(() => {
+
 	}).catch(error => {
-		console.error('Error saving word:', error);
-	});
-}
+
+	});*/

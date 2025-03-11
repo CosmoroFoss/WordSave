@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 // Phonetic cell
                 const phoneticCell = document.createElement('td');
-                phoneticCell.className = 'phonetic box-border loading px-6 w-2/12 min-w-0 truncate';
+                phoneticCell.className = 'phonetic box-border px-6 w-2/12 min-w-0 truncate';
 
                 p = document.createElement('p');
                 p.textContent = record.APIdata.phonetic; //await getPhonetic(record);
@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     // Phonetic cell
                     const phoneticCell2 = document.createElement('td');
-                    phoneticCell2.className = 'phonetic box-border loading px-6 w-2/12 min-w-0';
+                    phoneticCell2.className = 'phonetic box-border px-6 w-2/12 min-w-0';
                     
                     p = document.createElement('p');
                     p.textContent = meaning.partOfSpeech;

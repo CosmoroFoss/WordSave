@@ -1,3 +1,20 @@
+// content.js
+function injectTailwind(shadowRoot) {
+    // Get your compiled Tailwind CSS
+    fetch(chrome.runtime.getURL('./css/tailwind.css'))
+      .then(response => response.text())
+      .then(css => {
+        const style = document.createElement('style');
+        //style.textContent = `
+        //    :host, :host div, :host span, :host p, :host ul, :host li {
+        //        all: initial; /* Resets only for these elements */
+        //    }
+        //`;
+        style.textContent = css;
+        shadowRoot.appendChild(style);
+      });
+  }
+
 // Create a singleton popup manager
 const PopupManager = {
     shadow: null,
@@ -15,10 +32,12 @@ const PopupManager = {
             //this.popup = document.createElement('div');
             this.popup = document.createElement('div');
             this.popup.id = 'myExtensionPopup';
+            //this.popup.className = 'text-black';
             this.popup.style.cssText = `
                 font-family: monospace, sans-serif;
                 position: fixed;
                 display: none;
+                color: black;
                 background: white;
                 border: 1px solid #ccc;
                 padding: 10px;
@@ -26,6 +45,8 @@ const PopupManager = {
                 box-shadow: 0 2px 4px rgba(0,0,0,0.2);
                 z-index: 10000;
                 pointer-events: none;
+                max-width: 800px;
+                max-height: 320px;
             `;
 
             this.shadow.appendChild(this.popup);
@@ -50,6 +71,8 @@ const PopupManager = {
             `;
             document.head.appendChild(style);
             //document.body.appendChild(this.popup);
+
+            injectTailwind(this.shadow);
         }
     },
 
@@ -191,6 +214,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         PopupManager.isLoading = false;
         PopupManager.wordBeingSaved = null;
         PopupManager.updateForCurrentWord();
+    } else if (request.action == 'getSelectedText') {
+        //const selection = window.getSelection();
     }
 });
 
@@ -216,86 +241,110 @@ document.addEventListener('mousemove', async (event) => {
 		const x = event.clientX;
 		const y = event.clientY;
 
-        const range = getCaretPosition(x, y);
-
-        if (range && range.startContainer && range.startContainer.nodeType === Node.TEXT_NODE && range.startContainer.textContent && range.startContainer.textContent.trim().length > 0) {
-            const textNode = range.startContainer;
-            const text = textNode.textContent;
-            const cursorPosition = range.startOffset;
-
-            // Pattern for non-word characters (anything not a letter or apostrophe)
-            const nonWordPattern = /[^0-9a-zA-Z']/;
-            const nonLetterPattern = /[^0-9a-zA-Z]/;
-    
-            // BEFORE cursor: Split text before cursor and find last non-word char
-            const textBefore = text.substring(0, cursorPosition);
-    
-            const beforeMatch = [...textBefore].reverse().join("").search(nonLetterPattern);
-            const start = beforeMatch === -1 ? 0 : textBefore.length - beforeMatch;
-    
-            // AFTER cursor: Find next non-word char after cursor
-            const textAfter = text.substring(cursorPosition);
-            const afterMatch = textAfter.search(nonWordPattern);
-            const end = afterMatch === -1 ? 
-                text.length : // if no match, go to end of text
-                cursorPosition + afterMatch; // if match found, that's our endpoint
-    
-            // Create and apply the selection
-            const wordRange = document.createRange();
-            wordRange.setStart(textNode, start);
-            wordRange.setEnd(textNode, end);
-            
-            const selection = window.getSelection();
-            selection.removeAllRanges();
-            selection.addRange(wordRange);
-
-            const selectedText = selection.toString();
-
-            if (selectedText.trim().length > 0) {
-                // Store current word and event
-                PopupManager.currentWord = selectedText;
-                PopupManager.currentEvent = event;
-                
-                // If this word is currently being saved, show the loading spinner
-                if (PopupManager.isLoading && selectedText === PopupManager.wordBeingSaved) {
-                    PopupManager.showLoading(event);
-                    return;
+        const elementUnderCursor = document.elementFromPoint(x, y);
+        if (elementUnderCursor) {
+            let currentElement = elementUnderCursor;
+            while (currentElement) {
+                const style = window.getComputedStyle(currentElement);
+                if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+                    return null; // Element is not visible
                 }
-                
-                // get saved word from DB, display if it exists
-                const response = await chrome.runtime.sendMessage({ 
-                    action: 'getRecord',
-                    params: { word : selectedText }
-                });
+                currentElement = currentElement.parentElement;
+            }
 
-                if (response.record) {
-                    const data = JSON.parse(response.record.APIdata);
-                    const transcription = data.phonetic;
-                    const ul = document.createElement('ul');
+            const range = getCaretPosition(x, y);
 
-                    for(let i=0; i<4 && i < data.meanings[0].definitions.length; i++) {
-                        const li = document.createElement('li');
-                        li.textContent = data.meanings[0].definitions[i].definition;
-                        ul.appendChild(li);
-                    }
+            if (range && range.startContainer && range.startContainer.nodeType === Node.TEXT_NODE && range.startContainer.textContent && range.startContainer.textContent.trim().length > 0) {
+                const textNode = range.startContainer;
+                const text = textNode.textContent;
+                const cursorPosition = range.startOffset;
 
-                    /*
-                    data.meanings[0].definitions.forEach(definition => {
+                const textRange = document.createRange();
+                textRange.selectNodeContents(textNode);
+
+                const rect = textRange.getBoundingClientRect();
+                const selection = window.getSelection();
+
+                if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+                    // Pattern for non-word characters (anything not a letter or apostrophe)
+                    const nonWordPattern = /[^0-9a-zA-Z']/;
+                    const nonLetterPattern = /[^0-9a-zA-Z]/;
+            
+                    // BEFORE cursor: Split text before cursor and find last non-word char
+                    const textBefore = text.substring(0, cursorPosition);
+            
+                    const beforeMatch = [...textBefore].reverse().join("").search(nonLetterPattern);
+                    const start = beforeMatch === -1 ? 0 : textBefore.length - beforeMatch;
+            
+                    // AFTER cursor: Find next non-word char after cursor
+                    const textAfter = text.substring(cursorPosition);
+                    const afterMatch = textAfter.search(nonWordPattern);
+                    const end = afterMatch === -1 ? 
+                        text.length : // if no match, go to end of text
+                        cursorPosition + afterMatch; // if match found, that's our endpoint
+            
+                    // Create and apply the selection
+                    const wordRange = document.createRange();
+                    wordRange.setStart(textNode, start);
+                    wordRange.setEnd(textNode, end);
+                    
+                    selection.removeAllRanges();
+                    selection.addRange(wordRange);
+
+                    const selectedText = selection.toString();
+
+                    if (selectedText.trim().length > 0) {
+                        // Store current word and event
+                        PopupManager.currentWord = selectedText;
+                        PopupManager.currentEvent = event;
                         
-                    });*/
+                        // If this word is currently being saved, show the loading spinner
+                        if (PopupManager.isLoading && selectedText === PopupManager.wordBeingSaved) {
+                            //PopupManager.showLoading(event);
+                            PopupManager.updatePosition(event);
+                            return;
+                        }
+                        
+                        // get saved word from DB, display if it exists
+                        const response = await chrome.runtime.sendMessage({ 
+                            action: 'getRecord',
+                            params: { word : selectedText }
+                        });
 
-                    PopupManager.showList(event, ul, selectedText, transcription);
+                        if (response.record) {
+                            const data = JSON.parse(response.record.APIdata);
+                            const transcription = data.phonetic;
+                            const ul = document.createElement('ul');
+
+                            for(let i=0; i<4 && i < data.meanings[0].definitions.length; i++) {
+                                const li = document.createElement('li');
+                                li.textContent = data.meanings[0].definitions[i].definition;
+                                ul.appendChild(li);
+                            }
+
+                            /*
+                            data.meanings[0].definitions.forEach(definition => {
+                                
+                            });*/
+
+                            PopupManager.showList(event, ul, selectedText, transcription);
+                        }
+                        else {
+                            //PopupManager.show(event, 'Word not saved in WordSafe');
+                            PopupManager.hide();
+                        }
+                    }
+                    else 
+                        PopupManager.hide();
                 }
                 else {
-                    //PopupManager.show(event, 'Word not saved in WordSafe');
+                    selection.removeAllRanges();
                     PopupManager.hide();
                 }
             }
-            else 
+            else {
                 PopupManager.hide();
-        }
-        else {
-            PopupManager.hide();
+            }
         }
 	}
 });

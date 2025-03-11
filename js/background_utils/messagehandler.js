@@ -43,6 +43,8 @@ export async function lookupWord(dbManager, sendResponse, word) {
     if (record === null || record === undefined) {
       record = await lookupWordAPI(word);
     }
+    else
+      record = JSON.parse(record.APIdata)
 
     return record;
   });
