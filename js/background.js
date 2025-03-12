@@ -58,6 +58,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (action == "saveWordToDB") {
     saveWordToDB(db, params.word, dbManager)
+    .then(response => sendResponse(response))
   }
   
   if (action === "createWindow") {

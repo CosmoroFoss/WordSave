@@ -1,6 +1,7 @@
 <!doctype html>
 <html data-theme="corporate">
   <head>
+    <link rel="stylesheet" href="/css/material-icons.css">
     <link href="/css/tailwind.css" rel="stylesheet">
     <!--<link href="/css/popup.css" rel="stylesheet">-->
   </head>
@@ -84,11 +85,24 @@
 					<input type="checkbox" class="toggle" checked="">
 				</label>-->
 			</div>
+
+      <div id="successAlert" class="alert alert-success hidden">
+        <span class="material-symbols-outlined">
+          check_circle
+        </span>
+        <span>Word saved successfully</span>
+      </div>
+      <div id="errorAlert" class="alert alert-error hidden">
+        <span class="material-symbols-outlined">
+          error
+        </span>
+        <span>Error: failed to save</span>
+      </div>
 			
 		</div>
 	</div>
 
- 
+    <script src="/js/tts-handler.js"></script>
     <script defer type="module" src="/js/popup.js"></script>
   </body>
 </html>

@@ -1,4 +1,4 @@
-export function lookupUpdateUI(response, word) {
+export function lookupUpdateUI(response, word, ttsHandler) {
 	const wordData = response;//.wordData; // Assuming response contains the word data
 	const wordDefinition = document.getElementById('wordDefinition');
 
@@ -10,15 +10,37 @@ export function lookupUpdateUI(response, word) {
 	const defContainer = document.createElement('div');
 	defContainer.className = 'flex flex-col text-black';
 
+	const wordDiv = document.createElement('div');
+	wordDiv.className = 'flex items-center gap-x-1';
+
 	const wordElement = document.createElement('h2');
 	wordElement.className = 'font-bold';
 	wordElement.textContent = word;
+
+	const speakBtn = document.createElement('button');
+	speakBtn.innerHTML = '<span class="material-icons !text-sm">volume_up</span>';
+	speakBtn.className = 'speak-btn inline-flex items-center';
+	speakBtn.title = 'Speak word';
+	
+	speakBtn.addEventListener('click', async () => {
+		const settings = await chrome.storage.local.get('voiceSettings');
+		const voiceSettings = settings.voiceSettings || {
+			voice: 'UK English Female',
+			rate: 1.0,
+			pitch: 1.0
+		};
+
+		ttsHandler.speak(word, speakBtn);
+	});  
+
+	wordDiv.appendChild(wordElement);
+	wordDiv.appendChild(speakBtn);
 
 	const phoneticElement = document.createElement('h3');
 	phoneticElement.className = 'italic';
 	phoneticElement.textContent = wordData.phonetic;
 
-	defContainer.appendChild(wordElement);
+	defContainer.appendChild(wordDiv);
 	defContainer.appendChild(phoneticElement);
 
 	const defScrollContainer = document.createElement('div');

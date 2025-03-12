@@ -65,6 +65,8 @@ export async function saveWordToDB(db, label, dbManager) {
             await dbManager.addRecord(db, word, data, lang, apiurl);
         }
     }
+
+    return true;
 }
 
 export async function lookupWordAPI(label) {

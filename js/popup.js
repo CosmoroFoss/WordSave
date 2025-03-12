@@ -2,11 +2,13 @@ import { switchToTab } from './helper.js';
 import { lookupUpdateUI } from './popup_utils/lookup.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+  const ttsHandler = new TTSHandler();
+  ttsHandler.loadSettings();
+
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'contextMenuSaveWord') {
       const word = message.word;
       // Handle the word in your popup UI
-      console.log('Word to save from context menu:', word);
       // Update your popup UI accordingly
     }
     
@@ -63,9 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
       params: { word: word }
     }, (response) => {
       if (response /*&& response.success*/) {
-        lookupUpdateUI(response, word);
-      } else {
-        console.error('Failed to create popout window:', response.error);
+        lookupUpdateUI(response, word, ttsHandler);
       }
     });
   });
@@ -78,6 +78,25 @@ document.addEventListener('DOMContentLoaded', () => {
       chrome.runtime.sendMessage({ 
         action: "saveWordToDB", 
         params: { word: word }
+      }, (response) => {
+        if (response) {
+          const alert = document.getElementById('successAlert');
+          alert.classList.remove('hidden');
+          
+          // Hide alert after 2 seconds
+          setTimeout(() => {
+            alert.classList.add('hidden');
+          }, 2000);
+        } else {
+          const alert = document.getElementById('errorAlert');
+          alert.classList.remove('hidden');
+          
+          // Hide alert after 2 seconds
+          setTimeout(() => {
+            alert.classList.add('hidden');
+          }, 2000);
+        }
+
       });
     }
   });
