@@ -1,6 +1,6 @@
 import { saveWord, getSelectedText } from "./wordhandler.js";
 
-export function saveSelected(db, dbManager) {
+export async function saveSelected(db, dbManager) {
 	// Attempting to save selected text
 
 	chrome.tabs.query({active: true, currentWindow: true}, async(tabs) => {
@@ -11,45 +11,22 @@ export function saveSelected(db, dbManager) {
 			func: () => window.getSelection().toString().trim()
 		});
 
-		try{
-			await chrome.tabs.sendMessage(tabId, {
+		try {
+			chrome.tabs.sendMessage(tabId, {
 				action: 'wordSaveStarted'
 			});
 	
 			await saveWord(db, result, dbManager);
 		}
 		catch {
-			await chrome.tabs.sendMessage(tabId, {
-				action: 'wordSaveFailed' // not implemented
+			chrome.tabs.sendMessage(tabId, {
+				action: 'wordSaveFailed'
 			});
 		}
 		finally {
-			await chrome.tabs.sendMessage(tabId, {
+			chrome.tabs.sendMessage(tabId, {
 				action: 'wordSaveCompleted'
 			});
 		}
-
-
-		/*chrome.tabs.sendMessage(tabId, {
-			action: 'getSelectedText'
-		}).then(async (result) => {
-			if (result)
-				await saveWord(db, result, dbManager);
-			// ... use awaitedResult
-		  });*/
 	});
-
-	//const selectedText = await getSelectedText();
-
-	//if (selectedText) {
-	//	await saveWord(db, selectedText, dbManager);
-	//} else {
-	/*
-		chrome.notifications.create({
-		type: 'basic',
-		iconUrl: chrome.runtime.getURL('../assets/images/wordsave_book_logo128.png'),
-		title: 'No Text Selected',
-		message: 'Please select some text to save'
-		});*/
-	//}
 }

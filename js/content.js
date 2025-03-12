@@ -4,13 +4,33 @@ function injectTailwind(shadowRoot) {
     fetch(chrome.runtime.getURL('./css/tailwind.css'))
       .then(response => response.text())
       .then(css => {
-        const style = document.createElement('style');
+        //const style = document.createElement('style');
         //style.textContent = `
         //    :host, :host div, :host span, :host p, :host ul, :host li {
         //        all: initial; /* Resets only for these elements */
         //    }
         //`;
-        style.textContent = css;
+
+        const style = document.createElement('style');
+        style.textContent = `
+
+            #myExtensionPopup ul {
+                font-family: inherit;
+                font-size: 0.9em;
+                list-style-type: none;
+                padding-left: 0;
+                margin: 0;
+            }
+            #myExtensionPopup li {
+                font-family: inherit;
+                padding: 2px 0;
+            }    
+            #myExtensionPopup li.wordListItem {
+                margin-bottom: 2px;
+            }
+        `;
+
+        style.textContent = css + style.textContent;
         shadowRoot.appendChild(style);
       });
   }
@@ -47,30 +67,10 @@ const PopupManager = {
                 pointer-events: none;
                 max-width: 800px;
                 max-height: 320px;
+                overflow: hidden;
             `;
 
             this.shadow.appendChild(this.popup);
-
-            const style = document.createElement('style');
-            style.textContent = `
-                #myExtensionPopup {
-                    font-family: monospace, sans-serif;
-                }
-                #myExtensionPopup ul {
-                    font-family: inherit;
-                    font-size: 0.9em;
-                    list-style-type: none;
-                    padding-left: 0;
-                    margin: 0;
-                }
-                #myExtensionPopup li {
-                    font-family: inherit;
-                    padding: 2px 0;
-                    margin-bottom: 2px;
-                }
-            `;
-            document.head.appendChild(style);
-            //document.body.appendChild(this.popup);
 
             injectTailwind(this.shadow);
         }
@@ -148,25 +148,27 @@ const PopupManager = {
         this.isLoading = true;
         this.wordBeingSaved = this.currentWord;
         const loadingHtml = `
-            <div class="loading-spinner" style="
-                display: inline-block;
-                width: 20px;
-                height: 20px;
-                border: 3px solid #f3f3f3;
-                border-top: 3px solid #3498db;
-                border-radius: 50%;
-                animation: spin 1s linear infinite;
-            ">
+            <div
+            class="inline-block h-4 w-4 animate-spin rounded-full border-4 border-solid border-current border-e-transparent align-[-0.125em] text-surface motion-reduce:animate-[spin_1.5s_linear_infinite] dark:text-white"
+            role="status">
+            <span
+                class="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]"
+                >Loading...</span
+            >
             </div>
-            <style>
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-            </style>
-            <span style="margin-left: 10px">Saving word...</span>
         `;
         this.show(e, loadingHtml);
+    },
+
+    showFailed: async function(e) {
+        const loadingHtml = `
+            <span>Error</span>
+        `;
+        this.show(e, loadingHtml);
+
+        setTimeout(() => {
+            PopupManager.hide();
+        }, 1000);
     },
 
     currentWord: null,
@@ -186,7 +188,7 @@ const PopupManager = {
 
                 for(let i=0; i<4 && i < data.meanings[0].definitions.length; i++) {
                     const li = document.createElement('li');
-                    li.textContent = data.meanings[0].definitions[i].definition;
+                    li.textContent = '(' + data.meanings[0].partOfSpeech + ') ' + data.meanings[0].definitions[i].definition;
                     ul.appendChild(li);
                 }
 
@@ -210,6 +212,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (PopupManager.currentWord && PopupManager.currentEvent) {
             PopupManager.showLoading(PopupManager.currentEvent);
         }
+    } else if (request.action === 'wordSaveFailed') {
+        PopupManager.isLoading = false;
+        PopupManager.wordBeingSaved = null;
+        PopupManager.showFailed(PopupManager.currentEvent);
+        //await new Promise(resolve => setTimeout(resolve, waitTime));
     } else if (request.action === 'wordSaveCompleted') {
         PopupManager.isLoading = false;
         PopupManager.wordBeingSaved = null;
@@ -316,10 +323,18 @@ document.addEventListener('mousemove', async (event) => {
                             const transcription = data.phonetic;
                             const ul = document.createElement('ul');
 
-                            for(let i=0; i<4 && i < data.meanings[0].definitions.length; i++) {
-                                const li = document.createElement('li');
-                                li.textContent = data.meanings[0].definitions[i].definition;
+                            for(let i=0; i<4 && i < data.meanings.length; i++) {
+                                var li = document.createElement('li');
+                                li.textContent = '(' + data.meanings[i].partOfSpeech + ')';
                                 ul.appendChild(li);
+
+                                for(let j=0;j<3 && j < data.meanings[i].definitions.length; j++) {
+                                    li = document.createElement('li');
+                                    li.className = 'wordListItem';
+
+                                    li.textContent = data.meanings[i].definitions[j].definition;
+                                    ul.appendChild(li);
+                                }
                             }
 
                             /*

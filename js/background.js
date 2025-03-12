@@ -84,11 +84,6 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 /* commands */
 chrome.commands.onCommand.addListener(async (command) => {
   if (command === "save-selected") {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const activeTab = tabs[0];
-      // Use activeTab
-    });
-
     saveSelected(db, dbManager);
   }
   else if (command === "show-list") {

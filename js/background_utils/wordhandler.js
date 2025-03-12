@@ -27,51 +27,25 @@ export async function getSelectedText() {
 export async function saveWord(db, label, dbManager) {
     if (!label) return;
 
-    try {
-        // Get the current tab to send messages to content script
-        //const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
-        
-        // Notify content script that save is starting
-        //await chrome.tabs.sendMessage(tab.id, {
-        //    action: 'wordSaveStarted'
-        //});
+    const record = await dbManager.getRecord(label);
 
-        const record = await dbManager.getRecord(label);
+    if (record === null || record === undefined) {
+        const jsonObject = await lookupWordAPI(label);
 
-        if (record === null || record === undefined) {
-            const jsonObject = await lookupWordAPI(label);
+        if (jsonObject) {
+            const word = label;
+            const data = JSON.stringify(jsonObject);
+            const lang = 'en';
+            const apiurl = 'dictionaryapi.dev'
 
-            if (jsonObject) {
-                const word = label;
-                const data = JSON.stringify(jsonObject);
-                const lang = 'en';
-                const apiurl = 'dictionaryapi.dev'
+            try {
+                // Add record
+                await dbManager.addRecord(db, word, data, lang, apiurl);
 
-                try {
-                    // Add record
-                    await dbManager.addRecord(db, word, data, lang, apiurl);
-                    
-                    // Notify content script that save is complete
-                    //await chrome.tabs.sendMessage(tab.id, {
-                    //    action: 'wordSaveCompleted'
-                    //});
-
-                } catch (error) {
-                    console.error('Error:', error);
-                }
+            } catch (error) {
+                throw("failed to fetch word");
             }
         }
-    } catch (err) {
-        /*console.error('Error saving word:', err);
-        
-        // Error notification
-        chrome.notifications.create({
-            type: 'basic',
-            iconUrl: chrome.runtime.getURL('../assets/images/wordsave_book_logo128.png'),
-            title: 'Error',
-            message: 'Failed to save word',
-            priority: 2
-        });*/
     }
 }
 
@@ -95,8 +69,30 @@ export async function saveWordToDB(db, label, dbManager) {
 
 export async function lookupWordAPI(label) {
     await rateLimiter.checkRateLimit();
-    const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${label}`);
+
+    const response = await fetchDataWithTimeout(`https://api.dictionaryapi.dev/api/v2/entries/en/${label}`, 3000);
+    //await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${label}`);
     const jsonObject = await response.json();
 
     return jsonObject[0];
 }
+
+async function fetchDataWithTimeout(url, timeoutMs) {
+    const fetchPromise = fetch(url);
+  
+    const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+            reject(new Error(`Request timed out after ${timeoutMs}ms`));
+        }, timeoutMs);
+    });
+  
+    const response = await Promise.race([fetchPromise, timeoutPromise]);
+  
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+  
+    //const data = await response.json();
+    return response;
+}
+ 
