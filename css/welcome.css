@@ -18,6 +18,12 @@ h1, h2 {
 	color: #2c3e50;
 }
 
+.cursor-section {
+	background: white;
+    border-radius: 8px;
+	margin-bottom: 8px;
+}
+
 .section {
 	margin-bottom: 30px;
 }

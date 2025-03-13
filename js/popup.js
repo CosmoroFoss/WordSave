@@ -1,5 +1,6 @@
 import { switchToTab } from './helper.js';
 import { lookupUpdateUI } from './popup_utils/lookup.js';
+import { TTSHandler } from './tts-handler.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const ttsHandler = new TTSHandler();

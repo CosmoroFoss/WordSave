@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     cursorTrackingCheckbox.classList.add('no-transition');
 
     var settings = await chrome.storage.local.get('controlSettings');
-    const controlSettings = settings.hasOwnProperty('controlSettings') ? settings.controlSettings : true;
+    const controlSettings = settings.hasOwnProperty('controlSettings') ? settings.controlSettings : false;
 
     cursorTrackingCheckbox.checked = controlSettings;
 

@@ -186,10 +186,24 @@ const PopupManager = {
                 const transcription = data.phonetic;
                 const ul = document.createElement('ul');
 
-                for(let i=0; i<4 && i < data.meanings[0].definitions.length; i++) {
+                /*for(let i=0; i<4 && i < data.meanings[0].definitions.length; i++) {
                     const li = document.createElement('li');
                     li.textContent = '(' + data.meanings[0].partOfSpeech + ') ' + data.meanings[0].definitions[i].definition;
                     ul.appendChild(li);
+                }*/
+
+                for(let i=0; i<4 && i < data.meanings.length; i++) {
+                    var li = document.createElement('li');
+                    li.textContent = '(' + data.meanings[i].partOfSpeech + ')';
+                    ul.appendChild(li);
+
+                    for(let j=0;j<3 && j < data.meanings[i].definitions.length; j++) {
+                        li = document.createElement('li');
+                        li.className = 'wordListItem';
+
+                        li.textContent = data.meanings[i].definitions[j].definition;
+                        ul.appendChild(li);
+                    }
                 }
 
                 /*data.meanings[0].definitions.forEach(definition => {
@@ -242,7 +256,7 @@ document.addEventListener('mouseup', () => mouseDown = false);
 
 document.addEventListener('mousemove', async (event) => {
 	const settings = await chrome.storage.local.get('controlSettings');
-	const cursorTracking = settings.hasOwnProperty('controlSettings') ? settings.controlSettings : true;
+	const cursorTracking = settings.hasOwnProperty('controlSettings') ? settings.controlSettings : false;
 
 	if (!mouseDown && cursorTracking == true) {
 		const x = event.clientX;

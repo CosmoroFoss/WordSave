@@ -1,4 +1,4 @@
-class TTSHandler {
+export class TTSHandler {
     voiceSettings;
 
     constructor() {
